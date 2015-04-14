@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Wywisyg plugins for .........
+ * Main Wywisyg plugin module file.
  */
 define("SEE_RELATED_PLACEHOLDER_PATTERN", '<!--wysiwyg_see-related_plugin-->');
 
@@ -18,24 +18,26 @@ function wysiwyg_see_related_wysiwyg_include_directory($type) {
  */
 function wysiwyg_see_related_node_view($node) {
   // Early return.
-  if (empty($node->field_related_articles)) {
+  $field_name = variable_get('wysiwyg_see_related_field_name', 'nonexistent_field');
+  if (empty($node->{$field_name})) {
     return;
   }
 
-  // Look for any field with a text format.
+  // Look up the fields to act on.
   foreach (element_children($node->content) as $field_id) {
     if (empty($node->content[$field_id]['#items'])) {
       continue;
     }
 
     foreach ($node->content[$field_id]['#items'] as $key => $field) {
+      // Look for any field with a text format.
       if (empty($node->content[$field_id][$key]['#markup'])) {
         continue;
       }
 
       $field_markup = $node->content[$field_id][$key]['#markup'];
       if (isset($field['format']) && _wysiwyg_see_related_detect_placeholders($field_markup)) {
-        
+
         $replacement = _wysiwyg_see_related_get_replacement($node);
         $node->content[$field_id][$key]['#markup'] = _wysiwyg_see_related_replace_pattern($field_markup, $replacement);
       }
@@ -62,7 +64,7 @@ function _wysiwyg_see_related_replace_pattern($field, $replacement) {
  */
 function _wysiwyg_see_related_get_replacement($node) {
   static $replacement = '';
-  
+
   if (empty($replacement) && $field_name = variable_get('wysiwyg_see_related_field_name')) {
     $replacement = field_view_field('node', $node, $field_name);
     $replacement = render($replacement);
