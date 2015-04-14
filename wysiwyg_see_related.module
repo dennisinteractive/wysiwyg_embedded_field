@@ -1,0 +1,72 @@
+<?php
+
+/**
+ * @file
+ * Wywisyg plugins for .........
+ */
+define("SEE_RELATED_PLACEHOLDER_PATTERN", '<!--wysiwyg_see-related_plugin-->');
+
+/**
+ * Implements hook_wysiwyg_include_directory().
+ */
+function wysiwyg_see_related_wysiwyg_include_directory($type) {
+  return $type;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function wysiwyg_see_related_node_view($node) {
+  // Early return.
+  if (empty($node->field_related_articles)) {
+    return;
+  }
+
+  // Look for any field with a text format.
+  foreach (element_children($node->content) as $field_id) {
+    if (empty($node->content[$field_id]['#items'])) {
+      continue;
+    }
+
+    foreach ($node->content[$field_id]['#items'] as $key => $field) {
+      if (empty($node->content[$field_id][$key]['#markup'])) {
+        continue;
+      }
+
+      $field_markup = $node->content[$field_id][$key]['#markup'];
+      if (isset($field['format']) && _wysiwyg_see_related_detect_placeholders($field_markup)) {
+        
+        $replacement = _wysiwyg_see_related_get_replacement($node);
+        $node->content[$field_id][$key]['#markup'] = _wysiwyg_see_related_replace_pattern($field_markup, $replacement);
+      }
+    }
+  }
+}
+
+/**
+ * Detect placeholders for "See related" content.
+ */
+function _wysiwyg_see_related_detect_placeholders($markup) {
+  return strpos($markup, SEE_RELATED_PLACEHOLDER_PATTERN);
+}
+
+/**
+ * Replace placeholder with prepared replacement value string.
+ */
+function _wysiwyg_see_related_replace_pattern($field, $replacement) {
+  return str_replace(SEE_RELATED_PLACEHOLDER_PATTERN, $replacement, $field);
+}
+
+/**
+ * Get the "See related" rendered field value.
+ */
+function _wysiwyg_see_related_get_replacement($node) {
+  static $replacement = '';
+  
+  if (empty($replacement) && $field_name = variable_get('wysiwyg_see_related_field_name')) {
+    $replacement = field_view_field('node', $node, $field_name);
+    $replacement = render($replacement);
+  }
+
+  return $replacement;
+}

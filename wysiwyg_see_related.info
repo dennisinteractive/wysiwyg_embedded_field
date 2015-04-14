@@ -1,0 +1,5 @@
+name = Wysiwyg See Related
+description = Plugin to Place the content of "See related" field into specific location.
+package = User interface
+core = 7.x
+dependencies[] = wysiwyg

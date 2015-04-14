@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Install & updates for the Wysiwyg See Related module.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Set the default "See related" field name.
+ */
+function wysiwyg_see_related_install() {
+  variable_set('wysiwyg_see_related_field_name', 'field_see_related');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function wysiwyg_see_related_uninstall() {
+  variable_del('wysiwyg_see_related_field_name');
+}
