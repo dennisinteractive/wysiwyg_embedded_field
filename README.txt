@@ -15,10 +15,10 @@ or via menus: Configuration > Content Authoring > Wysiwyg profiles
 Edit the configuration for each Input format, i.e. Filtered HTML
 /admin/config/content/wysiwyg/profile/filtered_html/edit
 
+Tick the option: See related field
+
 Assumption
 =============
 The field name for Related Nodes differentiate from site to site.
 This  module will set field name variable as "field_see_related" as it's more generic.
 See: hook_install().
-
-Tick the option: See related field
