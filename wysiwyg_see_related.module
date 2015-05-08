@@ -36,7 +36,7 @@ function wysiwyg_see_related_node_view($node) {
       }
 
       $field_markup = $node->content[$field_id][$key]['#markup'];
-      if (isset($field['format']) && _wysiwyg_see_related_detect_placeholders($field_markup)) {
+      if (isset($field['format']) && _wysiwyg_see_related_detect_placeholders($field_markup) !== FALSE) {
 
         $replacement = _wysiwyg_see_related_get_replacement($node);
         $node->content[$field_id][$key]['#markup'] = _wysiwyg_see_related_replace_pattern($field_markup, $replacement);
