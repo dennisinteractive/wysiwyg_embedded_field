@@ -1,6 +1,7 @@
 Description
 ===========
 Provides a plugin to Place the content of "See related" field into specific location.
+Provides a token associated to the related field to pass to GA analytics.
 
 Installation
 ============

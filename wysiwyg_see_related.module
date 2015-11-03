@@ -72,3 +72,48 @@ function _wysiwyg_see_related_get_replacement($node) {
 
   return $replacement;
 }
+
+
+
+/**
+ * Implementation of hook_token_info()
+ * We create the token [node:related_nodes] that will be 0 or 1 if the node has set related nodes.
+ */
+function wysiwyg_see_related_token_info() {
+  $info['tokens']['node']['related_nodes'] = array(
+    'name' => t('See Related Nodes'),
+    'description' => t('Returns the if the node has or not related nodes setup.'),
+  );
+
+  return $info;
+}
+
+
+
+/**
+ * Implements hook_tokens(). This hook will operate the token and replace it with it's value.
+ */
+function wysiwyg_see_related_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+
+  if ($type == 'node' && !empty($data['node'])) {
+    $node = $data['node'];
+    foreach ($tokens as $name => $original) {
+
+      switch ($name) {
+        case 'related_nodes':
+          // We load the name of the related nodes field.
+          $related_field = variable_get('wysiwyg_see_related_field_name');
+          // We load the value of the
+          $related_value = field_get_items('node', $node, $related_field);
+          if($related_value) $related_value = 1;
+          else $related_value = 0;
+
+         $replacements[$original] = $related_value;
+          break;
+      }
+    }
+  }
+  return $replacements;
+}
+

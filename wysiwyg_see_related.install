@@ -20,3 +20,31 @@ function wysiwyg_see_related_install() {
 function wysiwyg_see_related_uninstall() {
   variable_del('wysiwyg_see_related_field_name');
 }
+
+/**
+ * Implements hook_dennis_requirements_alter().
+ */
+function wysiwyg_see_related_dennis_requirements_alter(&$requirements, $phase, $distro_schema_version) {
+  if ($phase == 'runtime') {
+    $t = get_t();
+
+    $modules_enabled = system_list('wysiwyg_see_related');
+
+    if (isset($modules_enabled['fe_paths'])) {
+
+    }
+      $related_field = variable_get('wysiwyg_see_related_field_name');
+    if (!isset($related_field) || $related_field == 'field_see_related') {
+      $description = _dennis_requirements_case_link(25245) . $t('you need to asociate a related field to the variable wysiwyg_see_related_field_name, \'field_see_related\' by default.');
+
+
+
+      $requirements['wysiwyg_see_related'] = array(
+        'title' => $t('WYSIWYG See Related'),
+        //'value' => $t('Distro 1.34.x'),
+        'description' => $description,
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+}
