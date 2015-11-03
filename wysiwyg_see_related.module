@@ -69,11 +69,8 @@ function _wysiwyg_see_related_get_replacement($node) {
     $replacement = field_view_field('node', $node, $field_name);
     $replacement = render($replacement);
   }
-
   return $replacement;
 }
-
-
 
 /**
  * Implementation of hook_token_info()
@@ -84,11 +81,8 @@ function wysiwyg_see_related_token_info() {
     'name' => t('See Related Nodes'),
     'description' => t('Returns the if the node has or not related nodes setup.'),
   );
-
   return $info;
 }
-
-
 
 /**
  * Implements hook_tokens(). This hook will operate the token and replace it with it's value.
@@ -117,3 +111,45 @@ function wysiwyg_see_related_tokens($type, $tokens, array $data = array(), array
   return $replacements;
 }
 
+/**
+ * hook_menu().
+ *
+ */
+function wysiwyg_see_related_menu() {
+
+  $items = array();
+  $items['admin/config/content/wysiwyg_see_related'] = array(
+    'title' => 'wysiwyg_see_related settings',
+    'description' => 'Administer the settings of wysiwyg_see_related',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wysiwyg_see_related_admin_form'),
+    'access arguments' => array(1),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * hook_form()
+ *
+ * @param $form
+ * @param $form_state
+ * @return mixed
+ */
+function wysiwyg_see_related_admin_form($form, &$form_state) {
+
+  $form['wysiwyg_see_related_enabled'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('wysiwyg_see_related_enabled'),
+    '#title' => t('Related Nodes Enabled'),
+  );
+  $form['wysiwyg_see_related_field_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Related Posts field name'),
+    '#default_value' => variable_get('wysiwyg_see_related_field_name'),
+    '#maxlength' => 255,
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
