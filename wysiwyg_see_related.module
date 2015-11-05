@@ -17,12 +17,11 @@ function wysiwyg_see_related_wysiwyg_include_directory($type) {
  * Implements hook_node_view().
  */
 function wysiwyg_see_related_node_view($node) {
-  // Early return.
+
   $field_name = variable_get('wysiwyg_see_related_field_name', 'nonexistent_field');
   if (empty($node->{$field_name})) {
     return;
   }
-
   // Look up the fields to act on.
   foreach (element_children($node->content) as $field_id) {
     if (empty($node->content[$field_id]['#items'])) {
@@ -34,12 +33,11 @@ function wysiwyg_see_related_node_view($node) {
       if (empty($node->content[$field_id][$key]['#markup'])) {
         continue;
       }
-
       $field_markup = $node->content[$field_id][$key]['#markup'];
       if (isset($field['format']) && _wysiwyg_see_related_detect_placeholders($field_markup) !== FALSE) {
-
-        $replacement = _wysiwyg_see_related_get_replacement($node);
-        $node->content[$field_id][$key]['#markup'] = _wysiwyg_see_related_replace_pattern($field_markup, $replacement);
+        // placeholder found
+          $replacement = _wysiwyg_see_related_get_replacement($node);
+          $node->content[$field_id][$key]['#markup'] = _wysiwyg_see_related_replace_pattern($field_markup, $replacement);
       }
     }
   }
@@ -96,14 +94,8 @@ function wysiwyg_see_related_tokens($type, $tokens, array $data = array(), array
 
       switch ($name) {
         case 'related_nodes':
-          // We load the name of the related nodes field.
-          $related_field = variable_get('wysiwyg_see_related_field_name');
-          // We load the value of the
-          $related_value = field_get_items('node', $node, $related_field);
-          if($related_value) $related_value = 1;
-          else $related_value = 0;
-
-         $replacements[$original] = $related_value;
+          $all_setup_flag = wysiwyg_see_related_node_has_related_setup($node);
+          $replacements[$original] = $all_setup_flag ? 1 : 0;
           break;
       }
     }
@@ -111,6 +103,59 @@ function wysiwyg_see_related_tokens($type, $tokens, array $data = array(), array
   return $replacements;
 }
 
+function wysiwyg_see_related_node_has_related_setup($node) {
+
+  $type = $node->type;
+  $all_setup = FALSE;
+  $placeholder = FALSE;
+  $related_field_setup = TRUE;
+
+  // If the functionality is not enabled we don't continue, and $all_setup = true;
+  if(!module_exists('wysiwyg_see_related') || !variable_get('wysiwyg_see_related_enabled')){
+    return true;
+  }
+
+  // If node type exists.
+  if (node_type_load($type) != FALSE) {
+
+    // WYSIWYG DETECTION
+    // We load the names of the node type fields.
+    $node_fields = field_info_instances('node', $type);
+    foreach ($node_fields as $node_field) {
+      if (isset($node_field['settings']['text_processing']) && ($node_field['settings']['text_processing'] == 1 || $node_field['settings']['text_processing'] == 2)) {
+        $item = field_get_items('node', $node, $node_field['field_name']);
+        foreach ($item as $item_instance) {
+          $markup = $item_instance['value'];
+          if (_wysiwyg_see_related_detect_placeholders($markup) == FALSE) {
+            // no placeholder found
+            $placeholder = FALSE;
+          }
+          else {
+            $placeholder = TRUE;
+          }
+        }
+      }
+    }
+    // RELATED FIELD DETECTION
+    $related_field_name = variable_get('wysiwyg_see_related_field_name');
+    // We load the value of the
+    $related_field = field_get_items('node', $node, $related_field_name);
+    // If there is no related field.
+    if(!$related_field){
+      $related_field_setup = FALSE;
+    }
+    // Check that is not an emply multifield.
+    else if (count($related_field) >= 2) {
+      if ($related_field['0']['fid'] == 0) {
+        $related_field_setup = FALSE;
+      }
+    }
+    if ($related_field_setup && $placeholder) {
+      $all_setup = TRUE;
+    }
+  }
+  return $all_setup;
+}
 /**
  * hook_menu().
  *
@@ -152,4 +197,19 @@ function wysiwyg_see_related_admin_form($form, &$form_state) {
   );
 
   return system_settings_form($form);
+}
+
+/**
+ * hook_node_validate().
+ *
+ * @param $node
+ * @param $form
+ * @param $form_state
+ */
+function wysiwyg_see_related_node_validate($node, $form, &$form_state) {
+
+  $all_set = wysiwyg_see_related_node_has_related_setup($node);
+  if (!$all_set) {
+    drupal_set_message(t("This [Article / Review] does not have a related link box. All Articles / Reviews should have a related link box. Please add one using the WYSIWYG button."), 'error');
+  }
 }

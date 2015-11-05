@@ -20,6 +20,8 @@ function wysiwyg_see_related_install() {
  */
 function wysiwyg_see_related_uninstall() {
   variable_del('wysiwyg_see_related_field_name');
+  variable_del('wysiwyg_see_related_enabled');
+
 }
 
 /**
