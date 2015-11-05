@@ -25,10 +25,18 @@ function wysiwyg_see_related_uninstall() {
 }
 
 /**
- *  Initialize variable wysiwyg_see_related_enabled.
+ *  Initialize variable wysiwyg_see_related_enabled && GA token [node:related_nodes].
  */
 function wysiwyg_see_related_update_7000() {
    variable_set('wysiwyg_see_related_enabled',0);
+
+    // If dimensions exists, stuff my token in
+  if(module_exists('dennis_ga') && variable_get('googleanalytics_custom_dimension')){
+    $my_dimension_key = '20';
+    $custom_dimensions = variable_get('googleanalytics_custom_dimension');
+    $custom_dimensions[$my_dimension_key]['value'] = '[node:related_nodes]';
+    variable_set('googleanalytics_custom_dimension', $custom_dimensions);
+  }
 }
 
 /**
@@ -40,6 +48,7 @@ function wysiwyg_see_related_dennis_requirements_alter(&$requirements, $phase, $
     $modules_enabled = system_list('wysiwyg_see_related');
     if (isset($modules_enabled['wysiwyg_see_related']) && variable_get('wysiwyg_see_related_enabled') == 1) {
       $related_field = variable_get('wysiwyg_see_related_field_name');
+      // If related field is not set.
       if (!isset($related_field) || $related_field == 'field_see_related') {
         $description = _dennis_requirements_case_link(25245) . $t('you need to asociate a related field to the variable wysiwyg_see_related_field_name, \'field_see_related\' by default.');
         $requirements['wysiwyg_see_related'] = array(

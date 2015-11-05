@@ -17,7 +17,7 @@ function wysiwyg_see_related_wysiwyg_include_directory($type) {
  * Implements hook_node_view().
  */
 function wysiwyg_see_related_node_view($node) {
-
+  // Early return.
   $field_name = variable_get('wysiwyg_see_related_field_name', 'nonexistent_field');
   if (empty($node->{$field_name})) {
     return;
@@ -164,7 +164,7 @@ function wysiwyg_see_related_menu() {
 
   $items = array();
   $items['admin/config/content/wysiwyg_see_related'] = array(
-    'title' => 'wysiwyg_see_related settings',
+    'title' => 'Node Related content settings',
     'description' => 'Administer the settings of wysiwyg_see_related',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('wysiwyg_see_related_admin_form'),
