@@ -95,7 +95,19 @@ function wysiwyg_see_related_tokens($type, $tokens, array $data = array(), array
       switch ($name) {
         case 'related_nodes':
           $all_setup_flag = wysiwyg_see_related_node_has_related_setup($node);
-          $replacements[$original] = $all_setup_flag ? 1 : 0;
+          if($all_setup_flag){
+            // If related field setup is correct we'll pass a CSV of related nodes to GA.
+            $related_field_name = variable_get('wysiwyg_see_related_field_name');
+            // We load the value of the $related_field_name
+            $related_fields = field_get_items('node', $node, $related_field_name);
+            $related_array = array();
+            foreach($related_fields as $related_field){
+              $related_array []=$related_field['nid'];
+            }
+            $related_array = implode(', ', $related_array);
+            $replacements[$original] = $related_array;
+
+          }
           break;
       }
     }
@@ -145,8 +157,8 @@ function wysiwyg_see_related_node_has_related_setup($node) {
       $related_field_setup = FALSE;
     }
     // Check that is not an emply multifield.
-    else if (count($related_field) >= 2) {
-      if ($related_field['0']['fid'] == 0) {
+    else if (count($related_field) == 1) {
+      if ($related_field['0']['nid'] == NULL) {
         $related_field_setup = FALSE;
       }
     }

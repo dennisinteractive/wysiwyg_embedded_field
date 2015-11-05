@@ -32,7 +32,7 @@ function wysiwyg_see_related_update_7000() {
 
     // If dimensions exists, stuff my token in
   if(module_exists('dennis_ga') && variable_get('googleanalytics_custom_dimension')){
-    $my_dimension_key = '20';
+    $my_dimension_key = '16';
     $custom_dimensions = variable_get('googleanalytics_custom_dimension');
     $custom_dimensions[$my_dimension_key]['value'] = '[node:related_nodes]';
     variable_set('googleanalytics_custom_dimension', $custom_dimensions);
