@@ -4,7 +4,8 @@
  * @file
  * Main Wywisyg plugin module file.
  */
-define("SEE_RELATED_PLACEHOLDER_PATTERN", '<!--wysiwyg_see-related_plugin-->');
+define("SEE_RELATED_PLACEHOLDER_PATTERN_INNER", 'wysiwyg_see-related_plugin');
+define("SEE_RELATED_PLACEHOLDER_PATTERN", '<!--' . SEE_RELATED_PLACEHOLDER_PATTERN_INNER . '-->');
 
 /**
  * Implements hook_wysiwyg_include_directory().
@@ -73,7 +74,6 @@ function _wysiwyg_see_related_get_replacement($node) {
   return $replacement;
 }
 
-
 /**
  * Implements hook_filter_info().
  */
@@ -82,7 +82,6 @@ function wysiwyg_see_related_filter_info() {
     'title' => t('Auto-populate wysiwyg see related placeholder'),
     'description' => t('If no see-related placeholder has been added to the text, one will be automatically added to the paragraph of your choice.'),
     'process callback' => 'wysiwyg_see_related_filter_callback',
-    //'tips callback' => '_filter_autop_tips', // TODO: Add tips callback.
     'settings callback' => 'wysiwyg_see_related_filter_settings',
   );
   return $filters;
@@ -99,7 +98,7 @@ function wysiwyg_see_related_filter_settings($form, &$form_state, $filter, $form
     '#title' => t('Insert as paragraph number'),
     '#default_value' => isset($filter->settings['paragraph_number']) ? $filter->settings['paragraph_number'] : '',
     '#maxlength' => 2,
-    '#description' => t('Select the paragaph number that the see related placeholder should be inserted to. (E.g. 1 would be at the very beginning of the text.'),
+    '#description' => t('Select the paragaph number that the "see related" placeholder should be inserted to. (E.g. 1 would be at the very beginning of the text.)'),
     '#required' => TRUE,
     '#element_validate' => array('element_validate_integer_positive'),
   );
