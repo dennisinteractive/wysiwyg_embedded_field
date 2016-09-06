@@ -117,21 +117,36 @@ function wysiwyg_see_related_node_view($node) {
 
       // First check if we should auto-populate.
       if (variable_get('wysiwyg_see_related_auto_populate', 0) && _wysiwyg_see_related_detect_placeholders($field_markup) === FALSE) {
-        $domdoc = new DOMDocument();
+        $paragraph_number = variable_get('wysiwyg_see_related_auto_populate_paragraph_number');
 
-        // DomDocument is funny about UTF-8.
-        // @See: http://stackoverflow.com/a/8218649
-        $domdoc->loadHTML(mb_convert_encoding($node->content[$field_id][$key]['#markup'], 'HTML-ENTITIES', 'UTF-8'));
-        $paragraphs = $domdoc->getElementsByTagName('p');
-        $paragraph_number = variable_get('wysiwyg_see_related_auto_populate_paragraph_number', 0) - 1;
+        // Convert to an array counter.
+        $paragraph_number--;
 
-        if ($paragraph_element = $paragraphs->item($paragraph_number)) {
-          // Generate new placeholder element.
-          $element = $domdoc->createElement('p');
-          $comment = $domdoc->createComment(SEE_RELATED_PLACEHOLDER_PATTERN_INNER);
-          $element->appendChild($comment);
-          $paragraph_element->parentNode->insertBefore($element, $paragraph_element);
-          $field_markup = $domdoc->saveHTML();
+        if ($paragraph_number == 0) {
+          // If it's the first paragraph, just insert it at the very start.
+          $field_markup = SEE_RELATED_PLACEHOLDER_PATTERN . $field_markup;
+        }
+        else {
+          $domdoc = new DOMDocument();
+
+          // DomDocument is funny about UTF-8.
+          // @See: http://stackoverflow.com/a/8218649
+          $domdoc->loadHTML(mb_convert_encoding($node->content[$field_id][$key]['#markup'], 'HTML-ENTITIES', 'UTF-8'));
+
+          // Check for the element before where we want to insert.
+          $paragraph_number--;
+
+          $paragraphs = $domdoc->getElementsByTagName('p');
+
+          if ($paragraph_element = $paragraphs->item($paragraph_number)) {
+            // Generate new placeholder element.
+            $element = $domdoc->createElement('p');
+            $comment = $domdoc->createComment(SEE_RELATED_PLACEHOLDER_PATTERN_INNER);
+            $element->appendChild($comment);
+            $paragraph_element->parentNode->insertBefore($element, $paragraph_element->nextSibling);
+
+            $field_markup = filter_dom_serialize($domdoc);
+          }
         }
       }
 
