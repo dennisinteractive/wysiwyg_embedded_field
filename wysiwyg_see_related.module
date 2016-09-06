@@ -77,7 +77,8 @@ function wysiwyg_see_related_admin_validate($form, &$form_state) {
   }
 
   if ($form_state['values']['wysiwyg_see_related_auto_populate']) {
-    if (empty($form_state['values']['wysiwyg_see_related_auto_populate_paragraph_number']) || !is_numeric($form_state['values']['wysiwyg_see_related_auto_populate_paragraph_number'])) {
+    $paragraph_number = $form_state['values']['wysiwyg_see_related_auto_populate_paragraph_number'];
+    if (empty($paragraph_number) || !is_numeric($paragraph_number) || $paragraph_number <= 0) {
       form_set_error('wysiwyg_see_related_auto_populate_paragraph_number', t('You must set a valid paragraph number.'));
     }
   }
@@ -121,12 +122,14 @@ function wysiwyg_see_related_node_view($node) {
         // DomDocument is funny about UTF-8.
         // @See: http://stackoverflow.com/a/8218649
         $domdoc->loadHTML(mb_convert_encoding($node->content[$field_id][$key]['#markup'], 'HTML-ENTITIES', 'UTF-8'));
-        $element = $domdoc->createElement('p');
-        $comment = $domdoc->createComment(SEE_RELATED_PLACEHOLDER_PATTERN_INNER);
-        $element->appendChild($comment);
         $paragraphs = $domdoc->getElementsByTagName('p');
+        $paragraph_number = variable_get('wysiwyg_see_related_auto_populate_paragraph_number', 0) - 1;
 
-        if ($paragraph_element = $paragraphs->item(variable_get('wysiwyg_see_related_auto_populate_paragraph_number', 0))) {
+        if ($paragraph_element = $paragraphs->item($paragraph_number)) {
+          // Generate new placeholder element.
+          $element = $domdoc->createElement('p');
+          $comment = $domdoc->createComment(SEE_RELATED_PLACEHOLDER_PATTERN_INNER);
+          $element->appendChild($comment);
           $paragraph_element->parentNode->insertBefore($element, $paragraph_element);
           $field_markup = $domdoc->saveHTML();
         }
