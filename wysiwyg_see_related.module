@@ -4,7 +4,85 @@
  * @file
  * Main Wywisyg plugin module file.
  */
-define("SEE_RELATED_PLACEHOLDER_PATTERN", '<!--wysiwyg_see-related_plugin-->');
+define("SEE_RELATED_PLACEHOLDER_PATTERN_INNER", 'wysiwyg_see-related_plugin');
+define("SEE_RELATED_PLACEHOLDER_PATTERN", '<!--' . SEE_RELATED_PLACEHOLDER_PATTERN_INNER . '-->');
+
+/**
+ * Implements hook_menu().
+ */
+function wysiwyg_see_related_menu() {
+  $items['admin/config/content/wysiwyg-see-related'] = array(
+    'title' => 'Wysiwyg See Related',
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer wysiwyg see related'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('wysiwyg_see_related_admin_form'),
+  );
+  return $items;
+}
+
+/**
+ * Form callback for admin form.
+ */
+function wysiwyg_see_related_admin_form($form, &$form_state) {
+  $form = array();
+
+  $fields = array('none' => t('Please select'));
+  foreach (field_info_fields() as $field_name => $field_info) {
+    if ($field_info['type'] == 'node_reference') {
+      $fields[$field_name] = $field_name;
+    }
+  }
+  $form['wysiwyg_see_related_field_name'] = array(
+    '#type' => 'select',
+    '#title' => t('Field name'),
+    '#description' => t('Set the see related field name.'),
+    '#options' => $fields,
+    '#default_value' => variable_get('wysiwyg_see_related_field_name', 0),
+    '#required' => TRUE,
+  );
+
+  $form['wysiwyg_see_related_auto_populate'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Auto-populate wysiwyg see related'),
+    '#description' => t('If no see-related area has been added to the text, one will be automatically added to the paragraph of your choice.'),
+    '#default_value' => variable_get('wysiwyg_see_related_auto_populate', 0),
+  );
+
+  $form['wysiwyg_see_related_auto_populate_paragraph_number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Paragraph number'),
+    '#description' => t('Select the paragraph number that the "see related" placeholder should be inserted to. (E.g. 1 would be at the very beginning of the text.)'),
+    '#default_value' => variable_get('wysiwyg_see_related_auto_populate_paragraph_number', ''),
+    '#size' => 5,
+    '#maxlength' => 2,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="wysiwyg_see_related_auto_populate"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  $form['#validate'][] = 'wysiwyg_see_related_admin_validate';
+
+  return system_settings_form($form);
+}
+
+/**
+ * Validate callback for wysiwyg_see_related_admin_form.
+ */
+function wysiwyg_see_related_admin_validate($form, &$form_state) {
+  if ($form_state['values']['wysiwyg_see_related_field_name'] == 'none') {
+    form_set_error('wysiwyg_see_related_field_name', t('Field name required'));
+  }
+
+  if ($form_state['values']['wysiwyg_see_related_auto_populate']) {
+    $paragraph_number = $form_state['values']['wysiwyg_see_related_auto_populate_paragraph_number'];
+    if (empty($paragraph_number) || !is_numeric($paragraph_number) || $paragraph_number <= 0) {
+      form_set_error('wysiwyg_see_related_auto_populate_paragraph_number', t('You must set a valid paragraph number.'));
+    }
+  }
+}
 
 /**
  * Implements hook_wysiwyg_include_directory().
@@ -36,6 +114,42 @@ function wysiwyg_see_related_node_view($node) {
       }
 
       $field_markup = $node->content[$field_id][$key]['#markup'];
+
+      // First check if we should auto-populate.
+      if (variable_get('wysiwyg_see_related_auto_populate', 0) && _wysiwyg_see_related_detect_placeholders($field_markup) === FALSE) {
+        $paragraph_number = variable_get('wysiwyg_see_related_auto_populate_paragraph_number');
+
+        // Convert to an array counter.
+        $paragraph_number--;
+
+        if ($paragraph_number == 0) {
+          // If it's the first paragraph, just insert it at the very start.
+          $field_markup = SEE_RELATED_PLACEHOLDER_PATTERN . $field_markup;
+        }
+        else {
+          $domdoc = new DOMDocument();
+
+          // DomDocument is funny about UTF-8.
+          // @See: http://stackoverflow.com/a/8218649
+          $domdoc->loadHTML(mb_convert_encoding($node->content[$field_id][$key]['#markup'], 'HTML-ENTITIES', 'UTF-8'));
+
+          // Check for the element before where we want to insert.
+          $paragraph_number--;
+
+          $paragraphs = $domdoc->getElementsByTagName('p');
+
+          if ($paragraph_element = $paragraphs->item($paragraph_number)) {
+            // Generate new placeholder element.
+            $element = $domdoc->createElement('p');
+            $comment = $domdoc->createComment(SEE_RELATED_PLACEHOLDER_PATTERN_INNER);
+            $element->appendChild($comment);
+            $paragraph_element->parentNode->insertBefore($element, $paragraph_element->nextSibling);
+
+            $field_markup = filter_dom_serialize($domdoc);
+          }
+        }
+      }
+
       if (isset($field['format']) && _wysiwyg_see_related_detect_placeholders($field_markup) !== FALSE) {
 
         $replacement = _wysiwyg_see_related_get_replacement($node);
