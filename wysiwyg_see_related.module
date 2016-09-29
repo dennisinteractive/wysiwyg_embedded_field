@@ -127,11 +127,7 @@ function wysiwyg_see_related_node_view($node) {
           $field_markup = SEE_RELATED_PLACEHOLDER_PATTERN . $field_markup;
         }
         else {
-          $domdoc = new DOMDocument();
-
-          // DomDocument is funny about UTF-8.
-          // @See: http://stackoverflow.com/a/8218649
-          $domdoc->loadHTML(mb_convert_encoding($node->content[$field_id][$key]['#markup'], 'HTML-ENTITIES', 'UTF-8'));
+          $domdoc = filter_dom_load($node->content[$field_id][$key]['#markup']);
 
           // Check for the element before where we want to insert.
           $paragraph_number--;
@@ -140,10 +136,8 @@ function wysiwyg_see_related_node_view($node) {
 
           if ($paragraph_element = $paragraphs->item($paragraph_number)) {
             // Generate new placeholder element.
-            $element = $domdoc->createElement('p');
             $comment = $domdoc->createComment(SEE_RELATED_PLACEHOLDER_PATTERN_INNER);
-            $element->appendChild($comment);
-            $paragraph_element->parentNode->insertBefore($element, $paragraph_element->nextSibling);
+            $paragraph_element->parentNode->insertBefore($comment, $paragraph_element->nextSibling);
 
             $field_markup = filter_dom_serialize($domdoc);
           }
